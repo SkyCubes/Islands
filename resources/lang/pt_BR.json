@@ -1,0 +1,5 @@
+{
+	"PLUGIN_SUCCESSFULLY_ENABLED": "{arg1} foi ativado com sucesso!",
+	"WORLD_CREATED": "Mundo '{arg1}' criado.",
+	"WORLD_LOADED": "Mundo '{arg1}' carregado."
+}

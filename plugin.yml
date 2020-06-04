@@ -1,0 +1,9 @@
+name: Islands
+version: 1.0.0
+author: DanMetzkr
+api: 3.0.0
+main: skycubes\islands\Islands
+description: SkyBlock on ocean
+commands:
+  is:
+    description: Comando Principal
