@@ -10,8 +10,10 @@ use pocketmine\Player;
 use pocketmine\level\Position;
 use pocketmine\level\Level;
 use pocketmine\block\Block;
+use pocketmine\scheduler\Task;
 
 use skycubes\islands\generator\WorldGenerator;
+use skycubes\islands\IslandsManager;
 
 
 class Islands extends PluginBase implements Listener{
@@ -34,6 +36,7 @@ class Islands extends PluginBase implements Listener{
 		$this->definitions = new Definitions($this);
 		
 		@mkdir($this->getDataFolder());
+		@mkdir($this->getDataFolder()."schemes");
 		@mkdir($this->getDataFolder().$this->definitions->getDef('LANG_PATH'));
         foreach(array_keys($this->getResources()) as $resource){
 			$this->saveResource($resource, false);
@@ -137,12 +140,14 @@ class Islands extends PluginBase implements Listener{
 								$pPos1 = $this->pos1[$sender->getName()];
 								$pPos2 = $this->pos2[$sender->getName()];
 
+								$schemeName = $args[1];
+
 								$pos1 = new Position($pPos1["x"], $pPos1["y"], $pPos1["z"]);
 								$pos2 = new Position($pPos2["x"], $pPos2["y"], $pPos2["z"]);
 
 								$level = $sender->getLevel();
 
-								if($this->createScheme($level, $pos1, $pos2)){
+								if($this->createScheme($level, $pos1, $pos2, $schemeName)){
 									$sender->sendMessage("scheme saved");
 								}
 							}else{
@@ -155,7 +160,19 @@ class Islands extends PluginBase implements Listener{
 					break;
 					
 					case 'createisland':
-						$this->createIsland($sender);
+						// if(isset($args[1])){
+						// 	$schemeName = $args[1];
+
+						// 	if($this->createIsland($sender, $schemeName)){
+						// 		$sender->sendMessage("island created");
+						// 	}else{
+						// 		$sender->sendMessage("scheme not found");
+						// 	}
+						// }else{
+						// 	$sender->sendMessage("missing scheme name");
+						// }
+						$this->getScheduler()->scheduleRepeatingTask(new Populate($this, $sender, $args[1]), 7);
+						
 					break;
 
 					default:
@@ -171,14 +188,7 @@ class Islands extends PluginBase implements Listener{
 	}
 
 
-	public function createScheme(Level $level, Position $pos1, Position $pos2){
-
-		// if($pos1->getY() > $pos2->getY()){
-		// 	$tempPos1 = $pos1;
-		// 	$tempPos2 = $pos2;
-		// 	$pos1 = $tempPos2;
-		// 	$pos2 = $tempPos1;
-		// }
+	public function createScheme(Level $level, Position $pos1, Position $pos2, $name){
 
 
 		if($pos1->getX() > $pos2->getX()){
@@ -243,13 +253,17 @@ class Islands extends PluginBase implements Listener{
 
 		}
 
-		$this->scheme = $layers;
-		return true;
+		return $this->saveScheme($name, $layers);
 	}
 
-	public function createIsland(Player $player){
+	public function createIsland(Player $player, $name){
 
-		$layers = $this->scheme;
+		$filename = preg_replace("/(.json)$/", "", $name).".json";
+		
+		if(!file_exists($this->getDataFolder()."schemes/".$filename)) return false;
+
+		$data = file_get_contents($this->getDataFolder()."schemes/".$filename);
+		$layers = json_decode($data);
 
 		$boxWidth = count($layers[0][0]);
 		$boxDepth = count($layers[0]);
@@ -292,6 +306,101 @@ class Islands extends PluginBase implements Listener{
 		        }
 		    }
 		}
+
+		return true;
+	}
+
+	public function saveScheme($name, $layers){
+		$dir = $this->getDataFolder()."schemes/";
+		$filename = $dir.$name.".json";
+		$data = json_encode($layers, JSON_PRETTY_PRINT);
+
+		return file_put_contents($filename, $data);
+	}
+
+	public function getIslandsFromCurl($curl=1){
+	    $x = $curl;
+	    $y = $curl;
+	    
+	    $curlsize = $curl*8;
+	    
+	    $sidesize = $curlsize/4;
+	    $side=0;
+	    
+	    $islands = [];
+	    
+	    for($side=0; $side<4; $side++){
+	        // 0 = right (x)(-y)
+	        // 1 = down (-x)(y*-1)
+	        // 2 = left (+y)(x*-1)
+	        // 3 = top (+x)(y)
+	        switch($side){
+	            case 0: // right
+	            
+	                for($i=0; $i<$sidesize; $i++){
+	                    $y--;
+	                    $islands[] = "$x:$y";
+	                }
+	                
+	            break;
+	            
+	            case 1: // down
+	            
+	                for($i=0; $i<$sidesize; $i++){
+	                    $x--;
+	                    $islands[] = "$x:$y";
+	                }
+	                
+	            break;
+	            
+	            case 2: // left
+	            
+	                for($i=0; $i<$sidesize; $i++){
+	                    $y++;
+	                    $islands[] = "$x:$y";
+	                }
+	            
+	            break;
+	            
+	            case 3: // top
+	            
+	                for($i=0; $i<$sidesize; $i++){
+	                    $x++;
+	                    $islands[] = "$x:$y";
+	                }
+	            break;
+	        }
+	    }
+	    
+	    return $islands;
+	}
+
+	public function getCurlFromIsland($island){
+		$xy = explode(":", $island);
+		$x = abs($xy[0]);
+		$y = abs($xy[1]);
+
+		$curl = ($x > $y) ? $x : $y;
+		return $curl;
+	}
+
+	public function getNextIsland($island){
+		$xy = explode(":", $island);
+		$x = $xy[0];
+		$y = $xy[1];
+
+		if(($x>=0) && ($y>=0) && $x == $y){
+			$x = $x+1;
+			return "$x:$y";
+		}else{
+			$curl = $this->getCurlFromIsland($island);
+			$islands = $this->getIslandsFromCurl($curl);
+
+			$key = array_search($island, $islands);
+
+			return $islands[$key+1];
+		}
+
 	}
 
 	/** 
@@ -303,4 +412,45 @@ class Islands extends PluginBase implements Listener{
 		return $this->config->get('Language');
 	}
 
+}
+
+class Populate extends Task{
+	protected $plugin;
+	protected $player;
+	private $islands;
+	private $island = "0:0";
+	private $present = 0;
+
+	public function __construct(Islands $plugin, Player $player, $islands){
+		$this->plugin = $plugin;
+		$this->player = $player;
+		$this->islands = $islands;
+		$this->posX = intval($this->player->getX());
+		$this->posY = intval($this->player->getY());
+		$this->posZ = intval($this->player->getZ());
+	}
+
+	public function onRun($tick){
+
+		if($this->present < $this->islands){
+		    $this->island = $this->plugin->getNextIsland($this->island);
+		    
+		    $xy = explode(":", $this->island);
+		    $x = $xy[0];
+		    $y = $xy[1];
+
+		    $newX = intval($this->posX-$x);
+		    $newZ = intval($this->posZ-$y);
+
+		    $block = Block::get(57);
+		    $position = new Position($newX, $this->posY, $newZ);
+		    var_dump($position);
+			$this->player->getLevel()->setBlock($position, $block, false, false);
+			$this->present++;
+		}else{
+			$this->plugin->getScheduler()->cancelTask($this->getTaskId());
+		}
+
+		
+	}
 }
