@@ -400,7 +400,20 @@ class Islands extends PluginBase implements Listener{
 
 			return $islands[$key+1];
 		}
+	}
+	
+	function getIslandBoundings($island, $size){
+	    $xy = explode(":", $island);
+		$x = $xy[0]*$size;
+		$y = $xy[1]*$size;
 
+	    $x2 = $x+$size;
+	    $y2 = $y+$size;
+
+	    $pos1 = array("x" => $x, "y" => $y);
+	    $pos2 = array("x" => $x2, "y" => $y2);
+
+	    return array($pos1, $pos2);
 	}
 
 	/** 
