@@ -11,9 +11,10 @@ use pocketmine\level\Position;
 use pocketmine\level\Level;
 use pocketmine\block\Block;
 use pocketmine\scheduler\Task;
+use pocketmine\event\player\PlayerMoveEvent;
 
 use skycubes\islands\generator\WorldGenerator;
-use skycubes\islands\IslandsManager;
+use skycubes\islands\IslandManager;
 
 
 class Islands extends PluginBase implements Listener{
@@ -24,11 +25,14 @@ class Islands extends PluginBase implements Listener{
 	private $skyforms;
 	private $economy;
 	private $world;
+	private $islandManager;
 
 	private $pos1 = [];
 	private $pos2 = [];
 
 	private $scheme = [];
+
+	private $isInSpawn = [];
 
 
 	public function onLoad(){
@@ -75,6 +79,13 @@ class Islands extends PluginBase implements Listener{
 			}
 			
 		}
+
+
+		$this->islandManager = new IslandManager($this, $this->world);
+		$this->islandManager->setSpawnCurl(0);
+		$this->islandManager->setIslandsSize(10);
+
+		$this->islandManager->initSpawn();
 
 
 		// $this->skyforms = $this->getServer()->getPluginManager()->getPlugin("SkyForms");
@@ -160,18 +171,9 @@ class Islands extends PluginBase implements Listener{
 					break;
 					
 					case 'createisland':
-						// if(isset($args[1])){
-						// 	$schemeName = $args[1];
-
-						// 	if($this->createIsland($sender, $schemeName)){
-						// 		$sender->sendMessage("island created");
-						// 	}else{
-						// 		$sender->sendMessage("scheme not found");
-						// 	}
-						// }else{
-						// 	$sender->sendMessage("missing scheme name");
-						// }
-						$this->getScheduler()->scheduleRepeatingTask(new Populate($this, $sender, $args[1]), 7);
+						
+						$this->islandManager->initIsland($sender);
+						// $this->getScheduler()->scheduleRepeatingTask(new Populate($this, $sender, $args[1]), 7);
 						
 					break;
 
@@ -318,103 +320,35 @@ class Islands extends PluginBase implements Listener{
 		return file_put_contents($filename, $data);
 	}
 
-	public function getIslandsFromCurl($curl=1){
-	    $x = $curl;
-	    $y = $curl;
-	    
-	    $curlsize = $curl*8;
-	    
-	    $sidesize = $curlsize/4;
-	    $side=0;
-	    
-	    $islands = [];
-	    
-	    for($side=0; $side<4; $side++){
-	        // 0 = right (x)(-y)
-	        // 1 = down (-x)(y*-1)
-	        // 2 = left (+y)(x*-1)
-	        // 3 = top (+x)(y)
-	        switch($side){
-	            case 0: // right
-	            
-	                for($i=0; $i<$sidesize; $i++){
-	                    $y--;
-	                    $islands[] = "$x:$y";
-	                }
-	                
-	            break;
-	            
-	            case 1: // down
-	            
-	                for($i=0; $i<$sidesize; $i++){
-	                    $x--;
-	                    $islands[] = "$x:$y";
-	                }
-	                
-	            break;
-	            
-	            case 2: // left
-	            
-	                for($i=0; $i<$sidesize; $i++){
-	                    $y++;
-	                    $islands[] = "$x:$y";
-	                }
-	            
-	            break;
-	            
-	            case 3: // top
-	            
-	                for($i=0; $i<$sidesize; $i++){
-	                    $x++;
-	                    $islands[] = "$x:$y";
-	                }
-	            break;
-	        }
-	    }
-	    
-	    return $islands;
+	public function onMove(PlayerMoveEvent $event){
+		$player = $event->getPlayer();
+
+		$x = intval($player->getX());
+		$z = intval($player->getZ());
+		$player->sendTip("x:$x / z:$z");
+		// if(!isset($this->isInSpawn[$player->getName()])){
+		// 	$this->isInSpawn[$player->getName()] = false;
+		// }
+
+		// if($this->islandManager->isInSpawn($player)){
+		// 	if(!$this->isInSpawn[$player->getName()]){
+		// 		$player->addTitle("\n", "§aVocê entrou no spawn.");
+		// 		$this->isInSpawn[$player->getName()] = true;
+		// 	}
+		// }else{
+		// 	if($this->isInSpawn[$player->getName()]){
+		// 		$player->addTitle("\n", "§cVocê saiu do spawn.");
+		// 		$this->isInSpawn[$player->getName()] = false;
+		// 	}
+		// }
+
+		// if($this->islandManager->isInIsland($player)){
+
+		// }
+
+
 	}
 
-	public function getCurlFromIsland($island){
-		$xy = explode(":", $island);
-		$x = abs($xy[0]);
-		$y = abs($xy[1]);
-
-		$curl = ($x > $y) ? $x : $y;
-		return $curl;
-	}
-
-	public function getNextIsland($island){
-		$xy = explode(":", $island);
-		$x = $xy[0];
-		$y = $xy[1];
-
-		if(($x>=0) && ($y>=0) && $x == $y){
-			$x = $x+1;
-			return "$x:$y";
-		}else{
-			$curl = $this->getCurlFromIsland($island);
-			$islands = $this->getIslandsFromCurl($curl);
-
-			$key = array_search($island, $islands);
-
-			return $islands[$key+1];
-		}
-	}
-	
-	function getIslandBoundings($island, $size){
-	    $xy = explode(":", $island);
-		$x = $xy[0]*$size;
-		$y = $xy[1]*$size;
-
-	    $x2 = $x+$size;
-	    $y2 = $y+$size;
-
-	    $pos1 = array("x" => $x, "y" => $y);
-	    $pos2 = array("x" => $x2, "y" => $y2);
-
-	    return array($pos1, $pos2);
-	}
 
 	/** 
     * Returns selected language in config.yml
