@@ -53,6 +53,43 @@ class IslandManager{
 	 //    $pos1 = new Position($x1, $y1, $z1);
 	 //    $pos2 = new Position($x2, $y2, $z2);
 
+		$spawn = $this->getIslandBoundings($this->encodeIslandLocation(0, 0));
+		$pos1 = $spawn[0];
+		$pos2 = $spawn[1];
+
+		if($pos1->getX() > $pos2->getX()){
+			$x1 = $pos2->getX();
+			$x2 = $pos1->getX();
+		}else{
+			$x1 = $pos1->getX();
+			$x2 = $pos2->getX();
+		}
+		$xN = abs($x1-$x2);
+
+
+		if($pos1->getZ() > $pos2->getZ()){
+			$z1 = $pos2->getZ();
+			$z2 = $pos1->getZ();
+		}else{
+			$z1 = $pos1->getZ();
+			$z2 = $pos2->getZ();
+		}
+		$zN = abs($z1-$z2);
+
+		for($z=0; $z<=$zN; $z++){
+			for($x=0; $x<=$xN; $x++){
+
+				$posX = ($x1<$x2) ? $x1+$x : $x1-$x;
+	    		$posZ = ($z1<$z2) ? $z1+$z : $z1-$z;
+
+				$position = new Position($posX, 16, $posZ);
+				
+				$this->world->setBlock($position, Block::get(7), false, false);
+
+			}
+
+		}
+
 	    $this->currentIsland = $this->encodeIslandLocation(0, 0);
 
 	    $this->spawnBounds = $this->getIslandBoundings($this->encodeIslandLocation(0, 0));
@@ -74,88 +111,66 @@ class IslandManager{
 		$island = $this->getNextIsland($this->currentIsland);
 
 	    $this->currentIsland = $island;
+	  
 	    $bounds = $this->getIslandBoundings($island);
 	    // var_dump($bounds);
-	    $block = mt_rand(1, 5);
+	    $block = 236;
+	    $meta = mt_rand(0, 15);
 
 	    $pos1 = $bounds[0];
 	    $pos2 = $bounds[1];
 
-	    echo $island."\n";
-	    echo " start in x:".$pos1->getX()." z:".$pos1->getZ()."\n";
-	    echo " end in x:".$pos2->getX()." z:".$pos2->getZ()."\n";
-	    $this->world->setBlock($pos1, Block::get($block), false, false);
-	    $this->world->setBlock($pos2, Block::get($block), false, false);
+	    $this->world->setBlock($pos1, Block::get($block, $meta), false, false);
+	    $this->world->setBlock($pos2, Block::get($block, $meta), false, false);
 
-	 //    if($pos1->getX() > $pos2->getX()){
-		// 	$x1 = $pos2->getX();
-		// 	$x2 = $pos1->getX();
-		// }else{
-		// 	$x1 = $pos1->getX();
-		// 	$x2 = $pos2->getX();
-		// }
-		// $xN = abs($x1-$x2);
+	    if($pos1->getX() > $pos2->getX()){
+			$x1 = $pos2->getX();
+			$x2 = $pos1->getX();
+		}else{
+			$x1 = $pos1->getX();
+			$x2 = $pos2->getX();
+		}
+		$xN = abs($x1-$x2);
 
-		// if($pos1->getY() > $pos2->getY()){
-		// 	$y1 = $pos2->getY();
-		// 	$y2 = $pos1->getY();
-		// }else{
-		// 	$y1 = $pos1->getY();
-		// 	$y2 = $pos2->getY();
-		// }
-		// $yN = abs($y1-$y2);
+		if($pos1->getZ() > $pos2->getZ()){
+			$z1 = $pos2->getZ();
+			$z2 = $pos1->getZ();
+		}else{
+			$z1 = $pos1->getZ();
+			$z2 = $pos2->getZ();
+		}
+		$zN = abs($z1-$z2);
 
-		// if($pos1->getZ() > $pos2->getZ()){
-		// 	$z1 = $pos2->getZ();
-		// 	$z2 = $pos1->getZ();
-		// }else{
-		// 	$z1 = $pos1->getZ();
-		// 	$z2 = $pos2->getZ();
-		// }
-		// $zN = abs($z1-$z2);
+		for($z=0; $z<=$zN; $z++){
 
-		// for($z=0; $z<=$zN; $z++){
+			for($x=0; $x<=$xN; $x++){
 
-		// 	for($x=0; $x<=$xN; $x++){
-
-		// 		$posX = ($x1<$x2) ? $x1+$x : $x1-$x;
-	 //    		$posZ = ($z1<$z2) ? $z1+$z : $z1-$z;
+				$posX = ($x1<$x2) ? $x1+$x : $x1-$x;
+	    		$posZ = ($z1<$z2) ? $z1+$z : $z1-$z;
 				
-		// 		$position = new Position($posX, 16, $posZ);
+				$position = new Position($posX, 16, $posZ);
 				
-		// 		$this->world->setBlock($position, Block::get($block), false, false);
+				$this->world->setBlock($position, Block::get($block, $meta), false, false);
 
-		// 	}
+			}
 
-		// }
+		}
 
 	    $this->islandsBounds[$player->getName()] = array($bounds[0], $bounds[1]);
+	    return $island;
 	}
 
 	public function isInIsland(Player $player){
-		if(count($this->islandsBounds) > 0){
-			foreach($this->islandsBounds as $bound){
-				// var_dump($bound);
-			}
-		}else{
-			return false;
-		}
-		$bounds = $this->islandsBounds[$player->getName()];
-		if($player->getLevel() != $this->world) return false;
-		if(($player->getX() > $bounds[0]->getX()) && ($player->getX() < $bounds[1]->getX())){
-			if(($player->getY() > $bounds[0]->getY()) && ($player->getY() < $bounds[1]->getY())){
-				if(($player->getZ() > $bounds[0]->getZ()) && ($player->getZ() < $bounds[1]->getZ())){
-					return true;
-				}
-			}
-		}
-		return false;
+		
+		$island = $this->getIslandFromPos($player);
+
+		return $island;
 	}
 
 	public function decodeIslandLocation($island){
 		$xy = explode(":", $island);
-		$x = abs($xy[0]);
-		$y = abs($xy[1]);
+		$x = $xy[0];
+		$y = $xy[1];
 
 		return array($x, $y);
 	}
@@ -224,11 +239,15 @@ class IslandManager{
 
 	public function getCurlFromIsland($island){
 		$pos = $this->decodeIslandLocation($island);
-		$x = $pos[0];
-		$y = $pos[1];
+		$x = abs($pos[0]);
+		$y = abs($pos[1]);
 
 		$curl = ($x > $y) ? $x : $y;
 		return $curl;
+	}
+
+	public function getGridPositionFromIndex($xy){
+		return abs($xy);
 	}
 
 	public function getNextIsland($island){
@@ -256,22 +275,70 @@ class IslandManager{
 	function getIslandBoundings($island){
 	    $pos = $this->decodeIslandLocation($island);
 
+
 		$x = ($pos[0] * $this->getIslandsSize());
+		$z = ($pos[1] * $this->getIslandsSize())*(-1);
+
+		$curl = $this->getCurlFromIsland($island);
+		$gridX = $this->getGridPositionFromIndex($pos[0]);
+		$gridY = $this->getGridPositionFromIndex($pos[1]);
+
+		// bounding increase 1 block every new curl prevent island overlapping
+		if($x > 0) $x = $x + $gridX; 
+		if($z > 0) $z = $z + $gridY;
+		if($x < 0) $x = $x - $gridX;
+		if($z < 0) $z = $z - $gridY;
+
+		if($x>=0){
+			$x2 = $x+$this->getIslandsSize();
+		}else{
+			$x2 = $x+$this->getIslandsSize();
+		}
+
+		if($z>=0){
+			$z2 = $z+$this->getIslandsSize();
+		}else{
+			$z2 = $z+$this->getIslandsSize();
+		}
+
 		$y = 16; // min height
-		$z = ($pos[1] * $this->getIslandsSize());
-
-		// $x2 = ($x < 0) ? $x - $this->getIslandsSize() : $x + $this->getIslandsSize();
-		// $z2 = ($z < 0) ? $z - $this->getIslandsSize() : $z + $this->getIslandsSize();
-
-		$x2 = $x+$this->getIslandsSize();
-    	$z2 = $z+$this->getIslandsSize();
-
 	    $y2 = 16; // max height
 
 	    $pos1 = new Position($x, $y, $z);
 	    $pos2 = new Position($x2, $y2, $z2);
 
 	    return array($pos1, $pos2);
+	}
+
+	public function getIslandFromPos(Player $player){
+		$posX = intval($player->getX());
+		$posZ = intval($player->getZ());
+
+		$size = $this->getIslandsSize();
+
+		$roundedX = (round(($posX-$size/2)/$size)*$size);
+		$roundedZ = (round(($posZ-$size/2)/$size)*$size);
+
+		$gridX = $roundedX+($roundedX/$size);
+		$gridZ = $roundedZ+($roundedZ/$size);
+
+		$gridXLimit = $gridX+$size;
+		$gridZLimit = $gridZ+$size;
+
+		$x = $roundedX/$size;
+		$z = $roundedZ/$size;
+
+		if($posX < $gridX){
+			$x--;
+		}
+		if($posZ < $gridZ){
+			$z--;
+		}
+
+		if($x == -0) $x = 0;
+		if($z == -0) $z = 0;
+
+		return $this->encodeIslandLocation($x, $z);
 	}
 
 

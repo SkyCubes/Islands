@@ -33,6 +33,7 @@ class Islands extends PluginBase implements Listener{
 	private $scheme = [];
 
 	private $isInSpawn = [];
+	private $isInIsland = [];
 
 
 	public function onLoad(){
@@ -83,7 +84,7 @@ class Islands extends PluginBase implements Listener{
 
 		$this->islandManager = new IslandManager($this, $this->world);
 		$this->islandManager->setSpawnCurl(0);
-		$this->islandManager->setIslandsSize(10);
+		$this->islandManager->setIslandsSize(15);
 
 		$this->islandManager->initSpawn();
 
@@ -172,10 +173,13 @@ class Islands extends PluginBase implements Listener{
 					
 					case 'createisland':
 						
-						$this->islandManager->initIsland($sender);
+						$sender->sendMessage($this->islandManager->initIsland($sender));
 						// $this->getScheduler()->scheduleRepeatingTask(new Populate($this, $sender, $args[1]), 7);
 						
 					break;
+
+					case 'pos':
+						$sender->sendMessage($this->islandManager->getIslandFromPos($sender));
 
 					default:
 						return true;
@@ -323,28 +327,36 @@ class Islands extends PluginBase implements Listener{
 	public function onMove(PlayerMoveEvent $event){
 		$player = $event->getPlayer();
 
-		$x = intval($player->getX());
-		$z = intval($player->getZ());
+		$x = $player->getX();
+		$z = $player->getZ();
 		$player->sendTip("x:$x / z:$z");
-		// if(!isset($this->isInSpawn[$player->getName()])){
-		// 	$this->isInSpawn[$player->getName()] = false;
-		// }
 
-		// if($this->islandManager->isInSpawn($player)){
-		// 	if(!$this->isInSpawn[$player->getName()]){
-		// 		$player->addTitle("\n", "§aVocê entrou no spawn.");
-		// 		$this->isInSpawn[$player->getName()] = true;
-		// 	}
-		// }else{
-		// 	if($this->isInSpawn[$player->getName()]){
-		// 		$player->addTitle("\n", "§cVocê saiu do spawn.");
-		// 		$this->isInSpawn[$player->getName()] = false;
-		// 	}
-		// }
+		if(!isset($this->isInSpawn[$player->getName()])){
+			$this->isInSpawn[$player->getName()] = false;
+		}
 
-		// if($this->islandManager->isInIsland($player)){
+		if($this->islandManager->isInSpawn($player)){
+			if(!$this->isInSpawn[$player->getName()]){
+				$player->addTitle("\n", "§aVocê entrou no spawn.");
+				$this->isInSpawn[$player->getName()] = true;
+			}
+		}else{
+			if($this->isInSpawn[$player->getName()]){
+				$player->addTitle("\n", "§cVocê saiu do spawn.");
+				$this->isInSpawn[$player->getName()] = false;
+			}
+		}
 
-		// }
+		$island = $this->islandManager->isInIsland($player);
+
+		if(!isset($this->isInIsland[$player->getName()])){
+			$this->isInIsland[$player->getName()] = $island;
+		}
+
+		if($this->isInIsland[$player->getName()] != $island){
+			$player->addTitle("\n", "§aIlha §f$island");
+			$this->isInIsland[$player->getName()] = $island;
+		}
 
 
 	}
