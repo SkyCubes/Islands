@@ -84,7 +84,7 @@ class Islands extends PluginBase implements Listener{
 
 		$this->islandManager = new IslandManager($this, $this->world);
 		$this->islandManager->setSpawnCurl(0);
-		$this->islandManager->setIslandsSize(15);
+		$this->islandManager->setIslandsSize(40);
 
 		$this->islandManager->initSpawn();
 

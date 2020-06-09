@@ -69,8 +69,8 @@ class IslandManager{
 				$posX = ($x1<$x2) ? $x1+$x : $x1-$x;
 	    		$posZ = ($z1<$z2) ? $z1+$z : $z1-$z;
 
-				$position = new Position($posX, 16, $posZ);
-				
+				$position = new Position($posX, 13, $posZ);
+				$this->world->loadChunk($posX, $posZ);
 				$this->world->setBlock($position, Block::get(7), false, false);
 
 			}
@@ -101,47 +101,48 @@ class IslandManager{
 	  
 	    $bounds = $this->getIslandBoundings($island);
 	    // var_dump($bounds);
-	    $block = 236;
-	    $meta = mt_rand(0, 15);
+	 //    $block = 236;
+	 //    $meta = mt_rand(0, 15);
 
-	    $pos1 = $bounds[0];
-	    $pos2 = $bounds[1];
+	 //    $pos1 = $bounds[0];
+	 //    $pos2 = $bounds[1];
 
-	    $this->world->setBlock($pos1, Block::get($block, $meta), false, false);
-	    $this->world->setBlock($pos2, Block::get($block, $meta), false, false);
+	 //    $this->world->setBlock($pos1, Block::get($block, $meta), false, false);
+	 //    $this->world->setBlock($pos2, Block::get($block, $meta), false, false);
 
-	    if($pos1->getX() > $pos2->getX()){
-			$x1 = $pos2->getX();
-			$x2 = $pos1->getX();
-		}else{
-			$x1 = $pos1->getX();
-			$x2 = $pos2->getX();
-		}
-		$xN = abs($x1-$x2);
+	 //    if($pos1->getX() > $pos2->getX()){
+		// 	$x1 = $pos2->getX();
+		// 	$x2 = $pos1->getX();
+		// }else{
+		// 	$x1 = $pos1->getX();
+		// 	$x2 = $pos2->getX();
+		// }
+		// $xN = abs($x1-$x2);
 
-		if($pos1->getZ() > $pos2->getZ()){
-			$z1 = $pos2->getZ();
-			$z2 = $pos1->getZ();
-		}else{
-			$z1 = $pos1->getZ();
-			$z2 = $pos2->getZ();
-		}
-		$zN = abs($z1-$z2);
+		// if($pos1->getZ() > $pos2->getZ()){
+		// 	$z1 = $pos2->getZ();
+		// 	$z2 = $pos1->getZ();
+		// }else{
+		// 	$z1 = $pos1->getZ();
+		// 	$z2 = $pos2->getZ();
+		// }
+		// $zN = abs($z1-$z2);
 
-		for($z=0; $z<=$zN; $z++){
+		// for($z=0; $z<=$zN; $z++){
 
-			for($x=0; $x<=$xN; $x++){
+		// 	for($x=0; $x<=$xN; $x++){
 
-				$posX = ($x1<$x2) ? $x1+$x : $x1-$x;
-	    		$posZ = ($z1<$z2) ? $z1+$z : $z1-$z;
+		// 		$posX = ($x1<$x2) ? $x1+$x : $x1-$x;
+	 //    		$posZ = ($z1<$z2) ? $z1+$z : $z1-$z;
 				
-				$position = new Position($posX, 16, $posZ);
-				
-				$this->world->setBlock($position, Block::get($block, $meta), false, false);
+		// 		$position = new Position($posX, 16, $posZ);
 
-			}
+		// 		$this->world->loadChunk($posX, $posZ);
+		// 		$this->world->setBlock($position, Block::get($block, $meta), false, false);				
 
-		}
+		// 	}
+
+		// }
 
 	    $this->islandsBounds[$player->getName()] = array($bounds[0], $bounds[1]);
 	    $this->constructIsland($island);
@@ -322,10 +323,10 @@ class IslandManager{
 
 		// return "x: $centerX, z: $centerZ";
 
-		$position = new Position($centerX, 17, $centerZ);
+		$position = new Position($centerX, 9, $centerZ);
 				
 
-		$filename = "teste.json";
+		$filename = "island.json";
 		
 		if(!file_exists($this->plugin->getDataFolder()."schemes/".$filename)) return false;
 
@@ -339,7 +340,7 @@ class IslandManager{
 
 		$initialX = $centerX-(intval($boxWidth/2));
 		$initialZ = $centerZ-(intval($boxDepth/2));
-		$initialY = 17;
+		$initialY = 9;
 
 		for($positionY=0; $positionY < count($layers); $positionY++){
 		    
@@ -356,12 +357,17 @@ class IslandManager{
 		            $blockData = explode(":", $blockData);
 
 		            $blockId = $blockData[0];
-		            $blockMeta = $blockData[1];
 
-		            $block = Block::get($blockId);
-		            $block->setDamage($blockMeta);
+		            if($blockId != 0){
+			            $blockMeta = $blockData[1];
 
-		            $this->world->setBlock($position, $block, false, false);
+			            $block = Block::get($blockId);
+			            $block->setDamage($blockMeta);
+
+			            $this->world->loadChunk($posX, $posZ);
+
+			            $this->world->setBlock($position, $block, false, false);
+		        	}
 		            
 		        }
 		    }

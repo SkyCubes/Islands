@@ -15,7 +15,7 @@ class WorldGenerator {
 
 	public function createWorld(string $name) {
 
-		$this->plugin->getServer()->generateLevel($name, null, 'pocketmine\level\generator\Flat', ["preset" => "3;minecraft:bedrock,5*minecraft:dirt,3*minecraft:sand,8*minecraft:water;"]);
+		$this->plugin->getServer()->generateLevel($name, null, 'pocketmine\level\generator\Flat', ["preset" => "3;minecraft:bedrock,5*minecraft:dirt,3*minecraft:sand,5*minecraft:water;"]);
 
 	}
 }
