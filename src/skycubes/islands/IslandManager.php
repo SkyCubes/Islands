@@ -31,7 +31,7 @@ class IslandManager{
 	}
 
 	public function setIslandsSize(int $size){
-		$this->islandSize = $size;
+		$this->islandSize = $size-1;
 	}
 	public function getIslandsSize(){
 		return $this->islandSize;
@@ -39,19 +39,6 @@ class IslandManager{
 
 
 	public function initSpawn(){
-		// $curlsize = $this->spawnCurl*8;
-	 //    $distanceFromSpawn = ($curlsize/4)*$this->islandSize;
-
-	 //    $x1 = $distanceFromSpawn*(-1);
-	 //    $y1 = 0;
-	 //    $z1 = $distanceFromSpawn*(-1);
-
-	 //    $x2 = abs($distanceFromSpawn);
-	 //    $y2 = 256;
-	 //    $z2 = abs($distanceFromSpawn);
-
-	 //    $pos1 = new Position($x1, $y1, $z1);
-	 //    $pos2 = new Position($x2, $y2, $z2);
 
 		$spawn = $this->getIslandBoundings($this->encodeIslandLocation(0, 0));
 		$pos1 = $spawn[0];
@@ -157,6 +144,7 @@ class IslandManager{
 		}
 
 	    $this->islandsBounds[$player->getName()] = array($bounds[0], $bounds[1]);
+	    $this->constructIsland($island);
 	    return $island;
 	}
 
@@ -277,7 +265,7 @@ class IslandManager{
 
 
 		$x = ($pos[0] * $this->getIslandsSize());
-		$z = ($pos[1] * $this->getIslandsSize())*(-1);
+		$z = ($pos[1] * $this->getIslandsSize());
 
 		$curl = $this->getCurlFromIsland($island);
 		$gridX = $this->getGridPositionFromIndex($pos[0]);
@@ -310,35 +298,75 @@ class IslandManager{
 	    return array($pos1, $pos2);
 	}
 
+
 	public function getIslandFromPos(Player $player){
-		$posX = intval($player->getX());
-		$posZ = intval($player->getZ());
+		$posX = $player->getX();
+		$posZ = $player->getZ();
 
-		$size = $this->getIslandsSize();
+		$size = $this->getIslandsSize()+1;
 
-		$roundedX = (round(($posX-$size/2)/$size)*$size);
-		$roundedZ = (round(($posZ-$size/2)/$size)*$size);
-
-		$gridX = $roundedX+($roundedX/$size);
-		$gridZ = $roundedZ+($roundedZ/$size);
-
-		$gridXLimit = $gridX+$size;
-		$gridZLimit = $gridZ+$size;
-
-		$x = $roundedX/$size;
-		$z = $roundedZ/$size;
-
-		if($posX < $gridX){
-			$x--;
-		}
-		if($posZ < $gridZ){
-			$z--;
-		}
-
-		if($x == -0) $x = 0;
-		if($z == -0) $z = 0;
+		$x = (floor($posX / $size) * $size)/$size;
+		$z = (floor($posZ / $size) * $size)/$size;
 
 		return $this->encodeIslandLocation($x, $z);
+	}
+
+
+	public function constructIsland($island){
+		$boundings = $this->getIslandBoundings($island);
+
+		$center = ceil($this->getIslandsSize()/2);
+
+		$centerX = $boundings[0]->getX() + $center;
+		$centerZ = $boundings[0]->getZ() + $center;
+
+		// return "x: $centerX, z: $centerZ";
+
+		$position = new Position($centerX, 17, $centerZ);
+				
+
+		$filename = "teste.json";
+		
+		if(!file_exists($this->plugin->getDataFolder()."schemes/".$filename)) return false;
+
+		$data = file_get_contents($this->plugin->getDataFolder()."schemes/".$filename);
+		$layers = json_decode($data);
+
+		$boxWidth = count($layers[0][0]);
+		$boxDepth = count($layers[0]);
+		$boxHeight = count($layers);
+
+
+		$initialX = $centerX-(intval($boxWidth/2));
+		$initialZ = $centerZ-(intval($boxDepth/2));
+		$initialY = 17;
+
+		for($positionY=0; $positionY < count($layers); $positionY++){
+		    
+		    for($positionZ=0; $positionZ < count($layers[$positionY]); $positionZ++){
+		        
+		        for($positionX=0; $positionX < count($layers[$positionY][$positionZ]); $positionX++){
+		            
+		            $posX = $initialX+$positionX;
+		            $posY = $initialY+$positionY;
+		            $posZ = $initialZ+$positionZ; 
+
+		            $position = new Position($posX, $posY, $posZ);
+		            $blockData = $layers[$positionY][$positionZ][$positionX];
+		            $blockData = explode(":", $blockData);
+
+		            $blockId = $blockData[0];
+		            $blockMeta = $blockData[1];
+
+		            $block = Block::get($blockId);
+		            $block->setDamage($blockMeta);
+
+		            $this->world->setBlock($position, $block, false, false);
+		            
+		        }
+		    }
+		}
+
 	}
 
 

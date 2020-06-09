@@ -180,6 +180,12 @@ class Islands extends PluginBase implements Listener{
 
 					case 'pos':
 						$sender->sendMessage($this->islandManager->getIslandFromPos($sender));
+					break;
+
+					case 'construct':
+						$island = $this->islandManager->getIslandFromPos($sender);
+						$this->islandManager->constructIsland($island);
+						// $sender->sendMessage();
 
 					default:
 						return true;
